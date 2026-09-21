@@ -8,6 +8,28 @@ import type { SensorData } from '../models/types';
 const router = Router();
 
 // ─────────────────────────────────────────────
+// GET /api
+// API overview and endpoint directory
+// ─────────────────────────────────────────────
+router.get('/', (_req, res) => {
+  res.json({
+    name: 'CrisisLink — Smart City Emergency Hub API',
+    status: 'ONLINE',
+    endpoints: {
+      health: '/api/health',
+      status: '/api/status',
+      alerts: '/api/alerts',
+      acknowledge: 'POST /api/alerts/:id/acknowledge',
+      resolve: 'POST /api/alerts/:id/resolve',
+      demoMode: 'POST /api/demo/mode',
+      demoTrigger: 'POST /api/demo/trigger',
+      demoNormal: 'POST /api/demo/normal',
+    },
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ─────────────────────────────────────────────
 // GET /api/health
 // Server health + Arduino connection status
 // ─────────────────────────────────────────────

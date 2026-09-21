@@ -36,9 +36,14 @@ class SerialService extends EventEmitter {
   private isConnected = false;
   private detectedPort = '';
 
+  private bannerPrinted = false;
+
   /** Start the service: detect port then connect */
   async start(): Promise<void> {
-    printBanner();
+    if (!this.bannerPrinted) {
+      printBanner();
+      this.bannerPrinted = true;
+    }
     const portPath = await this.resolvePort();
 
     if (!portPath) {
@@ -55,7 +60,6 @@ class SerialService extends EventEmitter {
   private async resolvePort(): Promise<string | null> {
     // Manual override via environment variable
     if (config.arduinoPort) {
-      console.log(`Using configured port: ${config.arduinoPort}`);
       return config.arduinoPort;
     }
 
@@ -64,8 +68,6 @@ class SerialService extends EventEmitter {
 
   /** Scan available serial ports and pick the most likely Arduino one */
   private async autoDetect(): Promise<string | null> {
-    console.log('Searching for Arduino...');
-
     let ports: Awaited<ReturnType<typeof SerialPort.list>>;
     try {
       ports = await SerialPort.list();
@@ -75,7 +77,6 @@ class SerialService extends EventEmitter {
     }
 
     if (ports.length === 0) {
-      console.log('No serial ports found.');
       return null;
     }
 
@@ -86,20 +87,16 @@ class SerialService extends EventEmitter {
     });
 
     if (arduino) {
-      console.log(`Arduino detected on ${arduino.path}`);
       return arduino.path;
     }
 
     // Fallback: return the first available COM/tty port
-    const fallback = ports[0];
-    console.log(`No Arduino identifier found. Trying first available port: ${fallback.path}`);
-    return fallback.path;
+    return ports[0].path;
   }
 
   /** Open a serial connection to the given port */
   private connect(portPath: string): void {
-    console.log(`\nOpening serial port: ${portPath}`);
-    console.log(`Baud rate: ${config.baudRate}\n`);
+    console.log(`[Serial] Connecting to ${portPath} at ${config.baudRate} baud...`);
 
     this.port = new SerialPort({
       path: portPath,
@@ -112,13 +109,17 @@ class SerialService extends EventEmitter {
     // ── Open ──────────────────────────────────
     this.port.open((err) => {
       if (err) {
-        console.error(`Failed to open ${portPath}: ${err.message}`);
+        console.error(`[Serial] Failed to open ${portPath}: ${err.message}`);
+        if (err.message.includes('Access denied')) {
+          console.warn(
+            `[Serial] TIP: If Arduino IDE Serial Monitor or another app is using ${portPath}, please close it so CrisisLink can connect.\n`
+          );
+        }
         this.handleDisconnect();
         return;
       }
       this.isConnected = true;
-      console.log('Serial connection established');
-      console.log('Waiting for sensor data...\n');
+      console.log(`[Serial] Connected to ${portPath} successfully! Waiting for sensor readings...\n`);
       this.emit('connected');
     });
 

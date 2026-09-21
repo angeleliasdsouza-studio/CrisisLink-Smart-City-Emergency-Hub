@@ -59,6 +59,8 @@ export function useWebSocket(): UseWebSocketResult {
 
   // WebSocket connection
   useEffect(() => {
+    unmountedRef.current = false;
+
     function connect() {
       if (unmountedRef.current) return;
 

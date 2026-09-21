@@ -16,6 +16,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Root endpoint redirect / info
+app.get('/', (_req, res) => {
+  res.json({
+    app: 'CrisisLink Backend',
+    dashboard: 'http://localhost:5173',
+    api: 'http://localhost:3001/api',
+  });
+});
+
 // Mount REST API
 app.use('/api', apiRoutes);
 
